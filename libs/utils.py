@@ -76,8 +76,66 @@ def fmtShortcut(text):
     mod, key = text.split('+', 1)
     return '<b>%s</b>+<b>%s</b>' % (mod, key)
 
+def color_fn(label):
+    if label == 8:
+        return (84,0,0)
+    elif label == 2:
+        return (255,0,0)
+    elif label == 12:
+        return (240,128,128)
+    elif label == 1:
+        return (148,0,211)
+    elif label == 11:
+        return (147,112,219)
+    elif label == 5:
+        return (255,255,0)
+    elif label == 3:
+        return (0,100,0)
+    elif label == 4:
+        return (124,252,0)
+    elif label == 6:
+        return (72,209,204)
+    elif label == 7:
+        return (0,0,255)
+    elif label == 9:
+        return (30,144,255)
+    elif label == 10:
+        return (176,196,222)
+    else:
+        print(f"Error label {label}")
+        return (0,0,0)
+LABELS_NAME = ['BACKGROUND',
+               'LSIL', #1低度鳞状上皮内病变***
+               'HSIL', #2高度鳞状上皮内病变***
+               'TRI', #3滴虫
+               'CC', #4线索细胞
+               'AGC', #5非典型腺细胞***
+               'ACTINO', #6形态与放线菌符合的真菌
+               'EC', #7子宫内膜细胞
+               'SCC', #8鳞状细胞癌***
+               'CANDIDA', #9形态与白念珠菌符合的真菌(线状)
+               'HSV', #10单纯疱疹病毒
+               'ASCUS',#11意义不明确的非典型性鳞状上皮细胞***
+               'ASCH',#12不排除外高度鳞状上皮内病变的非典型鳞状上皮细胞***
+               'LABEL13', #13
+               'PURE_NEG_IMG',#14
+               'NO',
+               'ERROR',
+]
+def labeltext_to_label(name):
+    if not isinstance(name,list) and name not in LABELS_NAME:
+        name = name.upper()
+    return LABELS_NAME.index(name)
 
 def generateColorByText(text):
+    if text in LABELS_NAME:
+        id = labeltext_to_label(text)
+        c = color_fn(id)
+        r = c[0]
+        g = c[1]
+        b = c[2]
+        return QColor(r, g, b, 100)
+
     s = ustr(text)
     hashCode = int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16)
     r = int((hashCode / 255) % 255)

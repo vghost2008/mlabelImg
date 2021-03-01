@@ -997,7 +997,10 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 # Load image:
                 # read data first and store for saving into label file.
-                self.imageData = read(unicodeFilePath, None)
+                if unicodeFilePath.endswith(".tmap"):
+                    self.imageData = bytes(reversed(read(unicodeFilePath, None)))
+                else:
+                    self.imageData = read(unicodeFilePath, None)
                 self.labelFile = None
                 self.canvas.verified = False
 
@@ -1127,7 +1130,8 @@ class MainWindow(QMainWindow, WindowMixin):
             self.loadFile(filename)
 
     def scanAllImages(self, folderPath):
-        extensions = ['.%s' % fmt.data().decode("ascii").lower() for fmt in QImageReader.supportedImageFormats()]
+        extensions = ['.%s' % fmt.data().decode("ascii").lower() for fmt in QImageReader.supportedImageFormats()]+[".tmap"]
+        print(extensions)
         images = []
 
         for root, dirs, files in os.walk(folderPath):

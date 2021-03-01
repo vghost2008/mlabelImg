@@ -124,21 +124,23 @@ class Shape(object):
                     min_x = min(min_x, point.x())
                     min_y = min(min_y, point.y())
                     max_y = max(max_y, point.y())
-
+                font_size = 24
                 if self.selected:
                     font = QFont()
-                    font.setPointSize(16)
-                    font.setBold(True)
+                    font.setPointSize(font_size)
+                    font.setBold(False)
                     pen = QPen(QColor(255,80,80))
+                    #pen = QPen(color)
                     painter.setFont(font)
                     painter.setPen(pen)
                     painter.drawText(min_x,(min_y+max_y)/2+8, self.label)
 
                 if min_x != sys.maxsize and min_y != sys.maxsize:
                     font = QFont()
-                    font.setPointSize(8)
-                    font.setBold(True)
+                    font.setPointSize(font_size)
+                    font.setBold(False)
                     pen = QPen(QColor(0,255,0))
+                    #pen = QPen(color)
                     painter.setFont(font)
                     painter.setPen(pen)
                     if(self.label == None):
