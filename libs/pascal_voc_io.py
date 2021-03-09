@@ -10,6 +10,7 @@ from libs.ustr import ustr
 
 
 XML_EXT = '.xml'
+BIN_EXT = '.bin'
 ENCODE_METHOD = DEFAULT_ENCODING
 
 class PascalVocWriter:
@@ -108,19 +109,39 @@ class PascalVocWriter:
             xmax.text = str(each_object['xmax'])
             ymax = SubElement(bndbox, 'ymax')
             ymax.text = str(each_object['ymax'])
+    @staticmethod
+    def encode_data(x):
+        P = b'I'
+        res = bytearray()
+        for d in x:
+            res.append(d ^ P[0])
+        return bytes(res)
 
     def save(self, targetFile=None):
         root = self.genXML()
         self.appendObjects(root)
         out_file = None
         if targetFile is None:
-            out_file = codecs.open(
-                self.filename + XML_EXT, 'w', encoding=ENCODE_METHOD)
+            if BIN_EXT is not None:
+                out_file = codecs.open(
+                    self.filename + BIN_EXT, 'wb')
+            else:
+                out_file = codecs.open(
+                    self.filename + XML_EXT, 'w', encoding=ENCODE_METHOD)
         else:
-            out_file = codecs.open(targetFile, 'w', encoding=ENCODE_METHOD)
+            if BIN_EXT is not None:
+                out_file = codecs.open(targetFile, 'wb')
+                pass
+            else:
+                out_file = codecs.open(targetFile, 'w', encoding=ENCODE_METHOD)
 
         prettifyResult = self.prettify(root)
-        out_file.write(prettifyResult.decode('utf8'))
+        data = prettifyResult
+        if BIN_EXT is not None:
+            data = self.encode_data(data)
+        else:
+            data = data.decode('utf8')
+        out_file.write(data)
         out_file.close()
 
 
@@ -148,10 +169,26 @@ class PascalVocReader:
         points = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax)]
         self.shapes.append((label, points, None, None, difficult))
 
+    @staticmethod
+    def decode_data(x):
+        P = b'I'
+        res = bytearray()
+        for d in x:
+            res.append(d ^ P[0])
+        return bytes(res)
+
     def parseXML(self):
-        assert self.filepath.endswith(XML_EXT), "Unsupport file format"
-        parser = etree.XMLParser(encoding=ENCODE_METHOD)
-        xmltree = ElementTree.parse(self.filepath, parser=parser).getroot()
+        if self.filepath.endswith(BIN_EXT):
+            with open(self.filepath,'rb') as f:
+                data = f.read(-1)
+                data = self.decode_data(data)
+                data = data.decode(encoding='utf-8')
+            xmltree = etree.fromstring(data)
+            pass
+        else:
+            assert self.filepath.endswith(XML_EXT), "Unsupport file format"
+            parser = etree.XMLParser(encoding=ENCODE_METHOD)
+            xmltree = ElementTree.parse(self.filepath, parser=parser).getroot()
         filename = xmltree.find('filename').text
         try:
             verified = xmltree.attrib['verified']

@@ -40,12 +40,13 @@ from libs.colorDialog import ColorDialog
 from libs.labelFile import LabelFile, LabelFileError
 from libs.toolBar import ToolBar
 from libs.pascal_voc_io import PascalVocReader
-from libs.pascal_voc_io import XML_EXT
+from libs.pascal_voc_io import XML_EXT,BIN_EXT
 from libs.yolo_io import YoloReader
 from libs.yolo_io import TXT_EXT
 from libs.ustr import ustr
 from libs.version import __version__
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
+USER_DEFINE_FILE_FORMATS = [".cmap",".xmap"]
 
 __appname__ = 'labelImg'
 
@@ -435,7 +436,8 @@ class MainWindow(QMainWindow, WindowMixin):
         saveDir = ustr(settings.get(SETTING_SAVE_DIR, None))
         self.lastOpenDir = ustr(settings.get(SETTING_LAST_OPEN_DIR, None))
         if self.defaultSaveDir is None and saveDir is not None and os.path.exists(saveDir):
-            #self.defaultSaveDir = saveDir #wj
+            self.defaultSaveDir = saveDir #wj
+            print(f"Change default save dir {self.defaultSaveDir}")
             self.statusBar().showMessage('%s started. Annotation will be saved to %s' %
                                          (__appname__, self.defaultSaveDir))
             self.statusBar().show()
@@ -797,8 +799,12 @@ class MainWindow(QMainWindow, WindowMixin):
         # Can add differrent annotation formats here
         try:
             if self.usingPascalVocFormat is True:
-                if annotationFilePath[-4:].lower() != ".xml":
-                    annotationFilePath += XML_EXT
+                if BIN_EXT is None:
+                    if annotationFilePath[-4:].lower() != ".xml":
+                        annotationFilePath += XML_EXT
+                else:
+                    if annotationFilePath[-4:].lower() != ".xml" and annotationFilePath[-4:].lower() != BIN_EXT:
+                            annotationFilePath += BIN_EXT
                 self.labelFile.savePascalVocFormat(annotationFilePath, shapes, self.filePath, self.imageData,
                                                    self.lineColor.getRgb(), self.fillColor.getRgb())
             elif self.usingYoloFormat is True:
@@ -997,7 +1003,13 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 # Load image:
                 # read data first and store for saving into label file.
-                if unicodeFilePath.endswith(".tmap"):
+                is_user_type = False
+                for t in USER_DEFINE_FILE_FORMATS:
+                    if unicodeFilePath.endswith(t):
+                        is_user_type = True
+                        break
+
+                if is_user_type:
                     self.imageData = bytes(reversed(read(unicodeFilePath, None)))
                 else:
                     self.imageData = read(unicodeFilePath, None)
@@ -1030,6 +1042,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 basename = os.path.basename(
                     os.path.splitext(self.filePath)[0])
                 xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
+                binPath = os.path.join(self.defaultSaveDir, basename + BIN_EXT)
                 txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
 
                 """Annotation file priority:
@@ -1037,6 +1050,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 """
                 if os.path.isfile(xmlPath):
                     self.loadPascalXMLByFilename(xmlPath)
+                if os.path.isfile(binPath):
+                    self.loadPascalXMLByFilename(binPath)
                 elif os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)
             else:
@@ -1130,7 +1145,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.loadFile(filename)
 
     def scanAllImages(self, folderPath):
-        extensions = ['.%s' % fmt.data().decode("ascii").lower() for fmt in QImageReader.supportedImageFormats()]+[".tmap"]
+        extensions = ['.%s' % fmt.data().decode("ascii").lower() for fmt in QImageReader.supportedImageFormats()]+USER_DEFINE_FILE_FORMATS
         print(extensions)
         images = []
 
@@ -1154,8 +1169,9 @@ class MainWindow(QMainWindow, WindowMixin):
                                                        | QFileDialog.DontResolveSymlinks))
 
         if dirpath is not None and len(dirpath) > 1:
-            #self.defaultSaveDir = dirpath #wj
-            pass 
+            self.defaultSaveDir = dirpath #wj
+            print(f"Change default save dir {self.defaultSaveDir}")
+            pass
 
         self.statusBar().showMessage('%s . Annotation will be saved to %s' %
                                      ('Change saved folder', self.defaultSaveDir))
@@ -1190,6 +1206,8 @@ class MainWindow(QMainWindow, WindowMixin):
         targetDirPath = ustr(QFileDialog.getExistingDirectory(self,
                                                      '%s - Open Directory' % __appname__, defaultOpenDirPath,
                                                      QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks))
+        self.defaultSaveDir = targetDirPath
+        print(f"Change default save dir {self.defaultSaveDir}")
         self.importDirImages(targetDirPath)
 
     def importDirImages(self, dirpath):
