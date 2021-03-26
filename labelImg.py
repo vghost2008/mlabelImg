@@ -1042,23 +1042,30 @@ class MainWindow(QMainWindow, WindowMixin):
                 basename = os.path.basename(
                     os.path.splitext(self.filePath)[0])
                 xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
-                binPath = os.path.join(self.defaultSaveDir, basename + BIN_EXT)
+                if BIN_EXT is not None:
+                    binPath = os.path.join(self.defaultSaveDir, basename + BIN_EXT)
+                else:
+                    binPath = None
                 txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
 
                 """Annotation file priority:
                 PascalXML > YOLO
                 """
-                if os.path.isfile(xmlPath):
-                    self.loadPascalXMLByFilename(xmlPath)
-                if os.path.isfile(binPath):
+                if binPath is not None and os.path.isfile(binPath):
                     self.loadPascalXMLByFilename(binPath)
+                elif os.path.isfile(xmlPath):
+                    print(f"Load {xmlPath}.")
+                    self.loadPascalXMLByFilename(xmlPath)
                 elif os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)
             else:
+                binPath = os.path.splitext(filePath)[0] + BIN_EXT
                 xmlPath = os.path.splitext(filePath)[0] + XML_EXT
                 txtPath = os.path.splitext(filePath)[0] + TXT_EXT
                 print(f"xmlPath {xmlPath}")
-                if os.path.isfile(xmlPath):
+                if os.path.isfile(binPath):
+                    self.loadPascalXMLByFilename(binPath)
+                elif os.path.isfile(xmlPath):
                     self.loadPascalXMLByFilename(xmlPath)
                 elif os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)

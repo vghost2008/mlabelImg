@@ -10,7 +10,8 @@ from libs.ustr import ustr
 
 
 XML_EXT = '.xml'
-BIN_EXT = '.bin'
+#BIN_EXT = '.bin'
+BIN_EXT = None
 ENCODE_METHOD = DEFAULT_ENCODING
 
 class PascalVocWriter:
@@ -178,7 +179,7 @@ class PascalVocReader:
         return bytes(res)
 
     def parseXML(self):
-        if self.filepath.endswith(BIN_EXT):
+        if BIN_EXT is not None and self.filepath.endswith(BIN_EXT):
             with open(self.filepath,'rb') as f:
                 data = f.read(-1)
                 data = self.decode_data(data)
