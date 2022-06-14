@@ -105,22 +105,7 @@ def color_fn(label):
         print(f"Error label {label}")
         return (0,0,0)
 LABELS_NAME = ['BACKGROUND',
-               'LSIL', #1低度鳞状上皮内病变***
-               'HSIL', #2高度鳞状上皮内病变***
-               'TRI', #3滴虫
-               'CC', #4线索细胞
-               'AGC', #5非典型腺细胞***
-               'ACTINO', #6形态与放线菌符合的真菌
-               'EC', #7子宫内膜细胞
-               'SCC', #8鳞状细胞癌***
-               'CANDIDA', #9形态与白念珠菌符合的真菌(线状)
-               'HSV', #10单纯疱疹病毒
-               'ASCUS',#11意义不明确的非典型性鳞状上皮细胞***
-               'ASCH',#12不排除外高度鳞状上皮内病变的非典型鳞状上皮细胞***
-               'LABEL13', #13
-               'PURE_NEG_IMG',#14
-               'NO',
-               'ERROR',
+               'person', 
 ]
 def labeltext_to_label(name):
     if not isinstance(name,list) and name not in LABELS_NAME:
