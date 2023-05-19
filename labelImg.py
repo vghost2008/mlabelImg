@@ -7,7 +7,7 @@ import platform
 import re
 import sys
 import subprocess
-
+import os.path as osp
 from functools import partial
 from collections import defaultdict
 
@@ -1055,6 +1055,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     self.loadPascalXMLByFilename(binPath)
                 elif os.path.isfile(xmlPath):
                     print(f"Load {xmlPath}.")
+                    print(f"{osp.splitext(osp.basename(xmlPath))[0]}")
                     self.loadPascalXMLByFilename(xmlPath)
                 elif os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)
