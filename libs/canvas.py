@@ -36,6 +36,10 @@ class Canvas(QWidget):
     def __init__(self, *args, **kwargs):
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
+        self.move_x = 0
+        self.moved_x = 0
+        self.move_y = 0
+        self.moved_y = 0
         self.mode = self.EDIT
         self.shapes = []
         self.current = None
@@ -104,6 +108,8 @@ class Canvas(QWidget):
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
         pos = self.transformPos(ev.pos())
+        rpos = pos
+
 
         # Update coordinates in status bar if image is opened
         window = self.parent().window()
@@ -169,6 +175,11 @@ class Canvas(QWidget):
                 self.boundedMoveShape(self.selectedShape, pos)
                 self.shapeMoved.emit()
                 self.repaint()
+            elif self.move_x>0 and self.move_y>0:
+                deltax = ev.pos().x()-self.move_x-self.moved_x
+                deltay = ev.pos().y()-self.move_y-self.moved_y
+                self.scrollRequest.emit(deltay*10, Qt.Vertical)
+                self.scrollRequest.emit(deltax*10, Qt.Horizontal)
             return
 
         # Just hovering over the canvas, 2 posibilities:
@@ -182,7 +193,7 @@ class Canvas(QWidget):
             for shape in shapes:
                 # Look for a nearby vertex to highlight. If that fails,
                 # check if we happen to be inside a shape.
-                index = shape.nearestVertex(pos, self.epsilon)
+                index = shape.nearestVertex(pos, max(self.epsilon/self.scale,1))
                 if index is not None:
                     if self.selectedVertex():
                         self.hShape.highlightClear()
@@ -215,20 +226,30 @@ class Canvas(QWidget):
 
     def mousePressEvent(self, ev):
         pos = self.transformPos(ev.pos())
+        self.move_x = -1
+        self.move_y = -1
+        self.moved_x = 0
+        self.moved_y = 0
 
         if ev.button() == Qt.LeftButton:
             if self.drawing():
                 self.handleDrawing(pos)
             else:
-                self.selectShapePoint(pos)
-                self.prevPoint = pos
-                self.repaint()
+                if self.selectShapePoint(pos):
+                    self.prevPoint = pos
+                    self.repaint()
+                else:
+                    self.move_x = ev.pos().x()
+                    self.move_y = ev.pos().y()
+
         elif ev.button() == Qt.RightButton and self.editing():
             self.selectShapePoint(pos)
             self.prevPoint = pos
             self.repaint()
 
     def mouseReleaseEvent(self, ev):
+        self.move_x = -1
+        self.move_y = -1
         if ev.button() == Qt.RightButton:
             menu = self.menus[bool(self.selectedShapeCopy)]
             self.restoreCursor()
@@ -246,6 +267,8 @@ class Canvas(QWidget):
             pos = self.transformPos(ev.pos())
             if self.drawing():
                 self.handleDrawing(pos)
+        self.selectedShape = None
+        self.hVertex = None
 
     def endMove(self, copy=False):
         assert self.selectedShape and self.selectedShapeCopy
@@ -317,12 +340,14 @@ class Canvas(QWidget):
             index, shape = self.hVertex, self.hShape
             shape.highlightVertex(index, shape.MOVE_VERTEX)
             self.selectShape(shape)
-            return
+            return True
 
         min_shape = self.nearestShape(point)
         if min_shape is not None:
             self.selectShape(min_shape)
             self.calculateOffsets(min_shape, point)
+            return True
+        return False
 
     def nearestShape(self,point,shapes=None):
         min_dis = 1e8
@@ -625,7 +650,7 @@ class Canvas(QWidget):
 
         mods = ev.modifiers()
         if Qt.ControlModifier == int(mods) and v_delta:
-            self.zoomRequest.emit(v_delta)
+            self.zoomRequest.emit(v_delta/2)
         else:
             v_delta and self.scrollRequest.emit(v_delta, Qt.Vertical)
             h_delta and self.scrollRequest.emit(h_delta, Qt.Horizontal)
